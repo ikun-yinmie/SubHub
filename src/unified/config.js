@@ -113,6 +113,13 @@ function applyEnvOverrides(config) {
     const defaultTarget = env('SUBHUB_DEFAULT_TARGET');
     if (defaultTarget) config.defaultTarget = defaultTarget;
 
+    // 对外访问地址。放环境变量 (.env 已被 gitignore) 而不是写进 config/subhub.json，
+    // 是为了让私人域名/反代地址不必跟着仓库公开；启动脚本也用同一个值填 CORS 白名单。
+    const publicBaseUrl = env('SUBHUB_PUBLIC_URL');
+    if (typeof publicBaseUrl === 'string' && publicBaseUrl.trim().length > 0) {
+        config.publicBaseUrl = publicBaseUrl.trim().replace(/\/+$/, '');
+    }
+
     const clashIsMihomo = env('SUBHUB_CLASH_IS_MIHOMO');
     if (typeof clashIsMihomo === 'string' && clashIsMihomo.length > 0) {
         config.clashIsMihomo = !['false', '0', 'off'].includes(

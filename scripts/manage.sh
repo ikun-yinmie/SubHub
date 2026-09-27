@@ -224,15 +224,45 @@ prepare_frontend() {
 # 对策: 给内核一个自定义名字 —— 此时内核会自动放行 http://localhost|127.0.0.1:<任意端口>;
 #   用户若自己设过 SUB_STORE_CORS_ALLOWED_ORIGINS, 就把自身来源追加进去。
 #   监听 0.0.0.0 时上面那条"本机放行"不覆盖局域网 IP, 所以自己把白名单拼出来。
+#
+# 隧道 / 反向代理 (Cloudflare Tunnel、Nginx、Caddy…) 是同一个坑的另一个入口:
+#   浏览器看到的站点是 https://<你的域名>, 它送进来的 Origin 就是这个域名, 既不在
+#   内核白名单里, 也不属于"本机放行"那两条 —— 于是 module 脚本 403 (页面白屏),
+#   所有 POST/PUT 也 403。现场长这样: Cloudflare 的 cdn-cgi/rum 心跳能通, 业务全挂。
+#   → 声明公网地址即可 (config/subhub.json 的 publicBaseUrl, 或 SUBHUB_PUBLIC_URL),
+#     启动时自动进白名单; 同一个值也用于生成订阅链接的绝对地址。
 
 # 内核默认白名单 (src/utils/cors.js 的 NODE_CORS_DEFAULT)。
 # 之所以抄一份: 监听非回环地址时要自己拼白名单, 不能让内核原本默认放行的来源静默失效。
 SUBHUB_CORS_KERNEL_DEFAULTS="https://sub-store.vercel.app,http://substore.stash,https://substore.stash"
 
+# 对外访问本服务的公网地址 (不含路径), 没声明就返回空
+public_origin() {
+    local value="${SUBHUB_PUBLIC_URL:-}" json="$ROOT/config/subhub.json"
+    if [ -z "$value" ] && [ -f "$json" ]; then
+        value="$("${SUBHUB_NODE:-node}" -e '
+            try {
+                const fs = require("fs");
+                const config = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+                process.stdout.write(`${config.publicBaseUrl ?? ""}`.trim());
+            } catch (e) {
+                process.stdout.write("");
+            }
+        ' "$json" 2>/dev/null || true)"
+    fi
+    [ -z "$value" ] && return 0
+    value="${value%/}"
+    case "$value" in
+        http://*|https://*) printf '%s' "$value" ;;
+        *) warn "publicBaseUrl 要是 http(s):// 开头的完整地址 (当前: $value), 已忽略" >&2 ;;
+    esac
+    return 0
+}
+
 prepare_cors() {
     export SUB_STORE_BACKEND_CUSTOM_NAME="${SUB_STORE_BACKEND_CUSTOM_NAME:-SubHub}"
 
-    local extra="http://127.0.0.1:$PORT,http://localhost:$PORT" ip lan=""
+    local extra="http://127.0.0.1:$PORT,http://localhost:$PORT" ip lan="" origin public=""
     case "${BIND_HOST:-127.0.0.1}" in
         127.0.0.1|localhost|"") ;;
         0.0.0.0|::|\*)
@@ -243,16 +273,35 @@ prepare_cors() {
             ;;
         *) lan=",http://$BIND_HOST:$PORT" ;;
     esac
+    public="$(public_origin)"
     extra="$extra$lan"
+    if [ -n "$public" ]; then
+        extra="$extra,$public"
+    fi
 
     if [ -n "${SUB_STORE_CORS_ALLOWED_ORIGINS:-}" ]; then
-        # 用户自己设过白名单 (此时内核不再启用"本机自动放行"): 追加自身来源
-        case ",${SUB_STORE_CORS_ALLOWED_ORIGINS}," in
-            *",http://127.0.0.1:$PORT,"*) ;;
-            *) export SUB_STORE_CORS_ALLOWED_ORIGINS="${SUB_STORE_CORS_ALLOWED_ORIGINS},${extra}" ;;
-        esac
-    elif [ -n "$lan" ]; then
+        # 用户自己设过白名单 (此时内核不再启用"本机自动放行"): 把自己这些来源补齐。
+        # 逐个判断而不是只看第一个, 否则漏掉公网域名照样白屏。
+        for origin in ${extra//,/ }; do
+            case ",${SUB_STORE_CORS_ALLOWED_ORIGINS}," in
+                *",$origin,"*) ;;
+                *) SUB_STORE_CORS_ALLOWED_ORIGINS="${SUB_STORE_CORS_ALLOWED_ORIGINS},$origin" ;;
+            esac
+        done
+        export SUB_STORE_CORS_ALLOWED_ORIGINS
+    elif [ -n "$lan" ] || [ -n "$public" ]; then
+        # 有对外来源时不能再依赖内核的"本机自动放行"(只在默认策略下生效), 自己拼全
         export SUB_STORE_CORS_ALLOWED_ORIGINS="${SUBHUB_CORS_KERNEL_DEFAULTS},${extra}"
+    fi
+
+    if [ -n "$public" ]; then
+        # 传给内核子进程: 生成的订阅链接/短链用同一个地址 (src/unified/config.js)。
+        # env/setsid 会继承已导出的变量, 不用再单独列出。
+        export SUBHUB_PUBLIC_URL="$public"
+        say "公网地址 $public 已加入 CORS 白名单"
+    elif [ -n "${SUBHUB_PUBLIC_URL:-}" ]; then
+        # 值不合法 (public_origin 里已提示): 别让它继续干扰生成的链接
+        unset SUBHUB_PUBLIC_URL
     fi
     return 0
 }

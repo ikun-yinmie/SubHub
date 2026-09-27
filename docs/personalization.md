@@ -115,6 +115,13 @@ MERGE_FRONTEND=1 bash scripts/serve.sh  # 单端口: 后端 + 前端都在 9635
 ## 8. 部署到局域网 / 公网
 
 1. `HOST=0.0.0.0 nohup bash scripts/dev.sh > subhub.log 2>&1 &`（默认监听 9635）或 `docker compose up -d`
-2. 反代（Caddy/Nginx）到 `9635`；模板与短链里要生成绝对链接时设置 `publicBaseUrl`（或 `SUBHUB_*`/`publicBaseUrl` 字段）。
-3. 自建前端跨域访问时，把前端来源加入 `SUB_STORE_CORS_ALLOWED_ORIGINS`。
-4. **对外提供服务请遵守 AGPL：同时公开本工程完整源码。**
+2. 反代（Caddy/Nginx/Cloudflare Tunnel）到 `9635`，并把公网地址写进 `.env` 的 `SUBHUB_PUBLIC_URL`（推荐：`.env` 已被 gitignore，私人域名不会跟着仓库公开；也可写 `config/subhub.json` 的 `publicBaseUrl`，但那个文件本身是入库的，注意别把私人域名提交上去）。一个字段管两件事：
+   - 生成订阅链接 / 短链时的**绝对地址**前缀（`baseUrlOf()` 优先用它）；
+   - **CORS 白名单**：`./start.sh` 会把它和本机 / 局域网来源一起放进 `SUB_STORE_CORS_ALLOWED_ORIGINS`。不写就会出现“HTML 能开、`.js` 全 403”的白屏现象 —— Vite 的 `<script type="module">` 以 CORS 模式加载，隧道把你的公网域名当 `Origin` 送进来，白名单里没有它就直接 403（POST/PUT 同理，所以 API 也一起挂）。最终白名单看 `./logs.sh` 的 `[CORS] allowed origins:` 一行。
+3. 只给**另一个来源**的前端跨域访问时，才需要自己写 `SUB_STORE_CORS_ALLOWED_ORIGINS`；写了之后脚本会把本机 / 局域网 / 公网来源逐个补齐（白名单外的 `Origin` 仍然 403，这是防 DNS-rebinding 的页面读你节点的关键，别改成 `*`）。
+4. **隧道一通，你的节点库和全部订阅就是公网可达的** —— 内核（Sub-Store Node 版）本身没有登录/鉴权，`/api/v1/*` 与订阅 URL 谁拿到谁就能读。至少选一种：
+   - Cloudflare Access（Zero Trust）给域名加一层登录；
+   - 或用 Caddy `basicauth` / Nginx `auth_basic` 在反代上拦；
+   - 或只监听局域网、用 WireGuard/Tailscale 这类内网入。
+   注意：`publicBaseUrl` 只解决“页面能加载”，它**不是**鉴权。
+5. **对外提供服务请遵守 AGPL：同时公开本工程完整源码。**
