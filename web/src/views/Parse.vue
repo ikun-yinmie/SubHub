@@ -26,6 +26,7 @@
                   <el-tag v-if="detected.inline.length > 0" type="warning" effect="plain" size="small">
                     节点 / 内容 {{ detected.inline.length }} 条
                   </el-tag>
+                  <span class="detect-hint">输入会暂存在本机浏览器，点「清空」即删除</span>
                 </template>
                 <span v-else class="detect-hint">支持订阅地址，也支持只有节点、没有订阅的场景</span>
               </div>
@@ -84,7 +85,8 @@
                 {{ loading ? '正在解析…' : '开始解析' }}
               </el-button>
               <el-button :icon="Operation" :disabled="loading" @click="fillSample">填充示例</el-button>
-              <el-button :icon="Delete" :disabled="loading || form.input.length === 0" @click="clear">
+              <el-button :icon="Delete" :disabled="loading || form.input.length === 0"
+                title="清空输入与结果，同时删除浏览器里记住的那份副本" @click="clear">
                 清空
               </el-button>
             </el-form-item>
@@ -142,7 +144,7 @@ import { CopyDocument, Delete, Download, MagicStick, Operation, Search } from '@
 
 import { ConvertService } from '@/services/convertService'
 import { copyText } from '@/utils/clipboard'
-import { getLocalStorageItem, setLocalStorageItem } from '@/utils/storage'
+import { getLocalStorageItem, removeLocalStorageItem, setLocalStorageItem } from '@/utils/storage'
 
 // 目标表的 kind → 界面上分组标题
 const GROUP_LABELS = {
@@ -286,7 +288,12 @@ export default {
 
     saveInput() {
       if (import.meta.env.VITE_USE_STORAGE !== 'true') return
-      if (this.form.input.trim().length === 0) return
+      // 输入为空 = 用户不留了：要删掉记住的那份。原先这里只是 return（不保存），
+      // 结果之前存下的内容永远删不掉，刷新页面又会连节点配置一起冒出来。
+      if (this.form.input.trim().length === 0) {
+        removeLocalStorageItem('parseInput')
+        return
+      }
       setLocalStorageItem('parseInput', this.form.input, Number(import.meta.env.VITE_CACHE_TTL) || 86400)
     },
 
@@ -300,6 +307,8 @@ export default {
       this.results = []
       this.activeResult = ''
       this.sharedError = ''
+      // 只清空输入框是不够的：浏览器里还留着自动记住的那份，刷新就会回来
+      removeLocalStorageItem('parseInput')
     },
 
     async copy(text, successMessage = '已复制') {

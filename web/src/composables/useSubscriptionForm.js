@@ -1,4 +1,4 @@
-import { setLocalStorageItem } from '@/utils/storage'
+import { removeLocalStorageItem, setLocalStorageItem } from '@/utils/storage'
 import { createSubscriptionForm } from '@/composables/useSubscription'
 
 /** 返回供 Options API data() 使用的订阅表单状态。 */
@@ -26,8 +26,15 @@ export function addCustomParam(customParams) {
  * @param {Object} form - 表单对象
  */
 export function saveSubUrl(form) {
-  if (form && form.sourceSubUrl !== '') {
-    const ttl = Number(import.meta.env.VITE_CACHE_TTL) || 3600;
-    setLocalStorageItem('sourceSubUrl', form.sourceSubUrl, ttl);
+  if (!form) return;
+
+  // 订阅地址常带 token，清空后必须真的删掉：原先只是"不保存"，
+  // 于是用户把框清空、下次打开它又回来了。
+  if (form.sourceSubUrl === '') {
+    removeLocalStorageItem('sourceSubUrl');
+    return;
   }
+
+  const ttl = Number(import.meta.env.VITE_CACHE_TTL) || 3600;
+  setLocalStorageItem('sourceSubUrl', form.sourceSubUrl, ttl);
 }
