@@ -1,0 +1,6 @@
+proxies:
+  - {"name":"node-vmess","type":"vmess","server":"1.2.3.4","port":443,"cipher":"auto","uuid":"11111111-1111-1111-1111-111111111111","alterId":0,"tls":true,"network":"ws","ws-opts":{"path":"/ws","headers":{"Host":"example.com"}},"udp":true,"servername":"example.com"}
+  - {"type":"vless","name":"node-vless","server":"5.6.7.8","port":443,"uuid":"11111111-1111-1111-1111-111111111111","udp":true,"tls":true,"skip-cert-verify":false,"packet-encoding":"xudp","network":"ws","ws-opts":{"headers":{"Host":"example.com"},"path":"/ws"},"encryption":"none","servername":"example.com"}
+  - {"type":"trojan","password":"tpass","server":"9.9.9.9","port":443,"name":"node-trojan","sni":"example.com","udp":true,"network":"tcp"}
+  - {"type":"ss","skip-cert-verify":false,"udp":true,"server":"10.0.0.1","port":8388,"cipher":"aes-256-gcm","password":"password","name":"node-ss"}
+  - {"type":"hysteria2","name":"node-hy2","server":"11.0.0.1","port":8443,"password":"hypass","sni":"example.com","skip-cert-verify":false,"tfo":false,"udp":true}

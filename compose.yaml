@@ -1,0 +1,71 @@
+# SubHub 编排
+#
+# 只启动合并后的内核 (默认):
+#   docker compose up -d
+# 附加可选外部引擎 (供对照/委托, 各自独立 profile):
+#   docker compose --profile engines up -d     # 官方 subconverter 镜像
+#   docker compose --profile extended up -d    # 需要先本地构建 SubConverter-Extended
+#   docker compose --profile sublinkx up -d    # sublinkX (Go 管理面板)
+#
+# 也可以只用 docker compose 跑引擎, 而用源码模式跑内核:
+#   docker compose --profile engines up -d && bash scripts/dev.sh
+
+services:
+  subhub:
+    build: .
+    image: subhub:local
+    container_name: subhub
+    ports:
+      - "9635:9635"
+    environment:
+      SUBHUB_HOME: /app
+      SUB_STORE_DATA_BASE_PATH: /app/data
+      SUB_STORE_BACKEND_API_HOST: 0.0.0.0
+      SUB_STORE_BACKEND_API_PORT: 9635
+      SUBHUB_DEFAULT_TARGET: mihomo
+      # 单端口模式 (需要 web/dist, 见 docs/personalization.md)
+      # SUB_STORE_BACKEND_MERGE: "true"
+      # SUB_STORE_FRONTEND_PATH: /app/web
+      # SUB_STORE_FRONTEND_BACKEND_PATH: /
+      # 可选引擎 (配合 engines profile)
+      # SUBHUB_SUBCONVERTER_URL: http://subconverter:25500
+      # SUBHUB_SUBCONVERTER_EXTENDED_URL: http://sconverter-ext:25500
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    restart: unless-stopped
+
+  # ---- 可选引擎 (C++ 系, 作为对照或委托目标) ----
+  subconverter:
+    image: tindy2013/subconverter:latest
+    container_name: subhub-subconverter
+    profiles: ["engines"]
+    ports:
+      - "25500:25500"
+    restart: unless-stopped
+
+  # SubConverter-Extended 未提供官方镜像, 需要时用它的 docker/ 目录自建:
+  #   cd engines/SubConverter-Extended && docker build -f docker/Dockerfile.debian -t sconverter-ext:local .
+  subconverter-ext:
+    image: sconverter-ext:local
+    container_name: subhub-subconverter-ext
+    profiles: ["extended"]
+    ports:
+      - "25501:25500"
+    restart: unless-stopped
+    # 镜像不存在时会失败; 先按上面的注释构建, 或删除本服务
+    pull_policy: never
+
+  # ---- 可选引擎 (Go 系, 自带管理面板与 SQLite) ----
+  sublinkx:
+    image: jaaksi/sublinkx:latest
+    container_name: subhub-sublinkx
+    profiles: ["sublinkx"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/sublinkx/db:/app/db
+      - ./data/sublinkx/template:/app/template
+      - ./data/sublinkx/logs:/app/logs
+    restart: unless-stopped
+    pull_policy: never

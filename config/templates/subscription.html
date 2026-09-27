@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{{title}}</title>
+        <style>
+            :root {
+                color-scheme: dark;
+                --bg: #0b1020;
+                --card: #151b30;
+                --border: #26304d;
+                --text: #e8ecf8;
+                --muted: #97a3c4;
+                --accent: #5b8cff;
+            }
+            * { box-sizing: border-box; }
+            body {
+                margin: 0;
+                padding: 24px 16px 64px;
+                background: var(--bg);
+                color: var(--text);
+                font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+            }
+            main { max-width: 1020px; margin: 0 auto; }
+            h1 { font-size: 22px; margin: 0 0 6px; }
+            h2 { font-size: 16px; margin: 28px 0 10px; color: var(--muted); font-weight: 600; }
+            .meta { color: var(--muted); font-size: 13px; }
+            .card {
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 16px;
+                margin-top: 14px;
+            }
+            ul { margin: 0; padding-left: 20px; }
+            a { color: var(--accent); text-decoration: none; word-break: break-all; }
+            table { width: 100%; border-collapse: collapse; font-size: 13px; }
+            th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+            th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+            code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; }
+            button {
+                background: transparent;
+                color: var(--accent);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                padding: 2px 8px;
+                cursor: pointer;
+                font-size: 12px;
+            }
+            .scroll { overflow-x: auto; }
+        </style>
+    </head>
+    <body>
+        <main>
+            <h1>{{title}}</h1>
+            <p class="meta">共 {{count}} 个节点 · 生成于 {{time}}</p>
+
+            <h2>客户端订阅链接</h2>
+            <div class="card">
+                <ul>
+{{client_links}}
+                </ul>
+            </div>
+
+            <h2>节点列表</h2>
+            <div class="card scroll">
+                <table>
+                    <thead>
+                        <tr><th>名称</th><th>协议</th><th>地址</th><th>分享链接</th></tr>
+                    </thead>
+                    <tbody>
+{{node_rows}}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+        <script>
+            document.addEventListener('click', function (event) {
+                const target = event.target;
+                if (!target || target.tagName !== 'BUTTON') return;
+                const value = target.getAttribute('data-copy');
+                if (!value) return;
+                navigator.clipboard.writeText(value).then(function () {
+                    const previous = target.textContent;
+                    target.textContent = '已复制';
+                    setTimeout(function () {
+                        target.textContent = previous;
+                    }, 1500);
+                });
+            });
+        </script>
+    </body>
+</html>

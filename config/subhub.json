@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "name": "SubHub",
+    "clashIsMihomo": true,
+    "defaultTarget": "mihomo",
+    "engines": {
+        "subconverter": {
+            "label": "subconverter (C++ 原版)",
+            "url": "http://127.0.0.1:25500",
+            "enabled": false
+        },
+        "subconverterExtended": {
+            "label": "SubConverter-Extended (C++ 增强)",
+            "url": "http://127.0.0.1:25501",
+            "enabled": false
+        },
+        "sublinkx": {
+            "label": "sublinkX (Go)",
+            "url": "http://127.0.0.1:8000",
+            "enabled": false
+        }
+    },
+    "nodeInfo": {
+        "provider": "http://ip-api.com/json",
+        "lang": "zh-CN",
+        "timeout": 8000,
+        "cacheTTL": 21600000
+    },
+    "paths": {
+        "templates": "config/templates",
+        "rulesets": "config/rulesets",
+        "snippets": "config/snippets"
+    },
+    "publicBaseUrl": ""
+}

@@ -1,0 +1,38 @@
+{
+  "log": {
+    "level": "info",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      { "tag": "ali", "address": "223.5.5.5", "detour": "DIRECT" },
+      { "tag": "local", "address": "local", "detour": "DIRECT" }
+    ],
+    "rules": [
+      { "outbound": "any", "server": "local" },
+      { "clash_mode": "direct", "server": "local" }
+    ],
+    "final": "ali",
+    "strategy": "prefer_ipv4"
+  },
+  "inbounds": [
+    {
+      "type": "mixed",
+      "tag": "mixed-in",
+      "listen": "127.0.0.1",
+      "listen_port": 7890
+    }
+  ],
+  "outbounds": {{outbounds_json}},
+  "route": {
+    "rules": [
+      { "action": "sniff" },
+      { "protocol": "dns", "action": "hijack-dns" },
+      { "ip_is_private": true, "outbound": "DIRECT" },
+      { "clash_mode": "direct", "outbound": "DIRECT" },
+      { "geoip": "cn", "outbound": "DIRECT" }
+    ],
+    "final": "🚀 节点选择",
+    "auto_detect_interface": true
+  }
+}

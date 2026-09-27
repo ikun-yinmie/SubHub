@@ -1,0 +1,33 @@
+# SubHub 默认 Clash (Premium) 模板
+# 旧版 Clash 不支持 filter / exclude-filter, 因此这里用 {{names}} 展开节点名。
+mixed-port: 7890
+allow-lan: false
+mode: rule
+log-level: info
+ipv6: false
+external-controller: 127.0.0.1:9090
+
+proxies:
+{{proxies}}
+
+proxy-groups:
+  - name: 🚀 节点选择
+    type: select
+    proxies:
+      - ♻️ 自动选择
+      - 🎯 全球直连
+      - {{names}}
+  - name: ♻️ 自动选择
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    proxies:
+      - {{names}}
+  - name: 🎯 全球直连
+    type: select
+    proxies:
+      - DIRECT
+
+rules:
+  - GEOIP,CN,DIRECT
+  - MATCH,🚀 节点选择

@@ -1,0 +1,51 @@
+# SubHub 默认 Mihomo (Clash.Meta) 模板
+# 这是你的"外壳": {{proxies}} 会被替换为节点定义, 其余内容可随意改。
+# 生成时也可以指定模板: /api/sub?target=mihomo&config=my-template.yaml&url=<订阅>
+mixed-port: 7890
+allow-lan: false
+mode: rule
+log-level: info
+ipv6: false
+external-controller: 127.0.0.1:9090
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  fallback:
+    - 1.1.1.1
+    - 8.8.8.8
+
+proxies:
+{{proxies}}
+
+proxy-groups:
+  - name: 🚀 节点选择
+    type: select
+    proxies:
+      - ♻️ 自动选择
+      - 🎯 全球直连
+      - 🌏 全部节点
+  - name: ♻️ 自动选择
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+    filter: ".*"
+    exclude-filter: "(剩余|流量|过期|到期|官网|订阅|群组|通知)"
+  - name: 🌏 全部节点
+    type: select
+    filter: ".*"
+  - name: 🎯 全球直连
+    type: select
+    proxies:
+      - DIRECT
+
+rules:
+  - GEOIP,lan,DIRECT,no-resolve
+  - GEOIP,private,DIRECT,no-resolve
+  - GEOIP,CN,DIRECT
+  - MATCH,🚀 节点选择

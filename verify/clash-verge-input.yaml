@@ -1,0 +1,96 @@
+# Profile Template for Clash Verge
+
+proxies:
+
+  - name: "Vls-SG-Alibaba"
+    type: vless
+    server: saas.sin.fan
+    port: 443
+    uuid: 7fe2618c-b013-4d14-a4ea-835cf2a0e1d7
+    network: ws
+    tls: true
+    servername: qwenago.xckc.kdns.fr
+    client-fingerprint: chrome
+    skip-cert-verify: true
+    ws-opts:
+      path: "/vless-argo?ed=2560"
+      headers:
+        Host: qwenago.xckc.kdns.fr
+
+  - name: "Vls-SG-Alibaba-2"
+    type: vless
+    server: ip.xjk.indevs.in
+    port: 443
+    uuid: 7fe2618c-b013-4d14-a4ea-835cf2a0e1d7
+    network: ws
+    tls: true
+    servername: qwenago.xckc.kdns.fr
+    client-fingerprint: chrome
+    skip-cert-verify: true
+    ws-opts:
+      path: "/vless-argo?ed=2560"
+      headers:
+        Host: qwenago.xckc.kdns.fr
+
+  - name: "US-Railwaysaas-2"
+    type: vless
+    server: saas.sin.fan
+    port: 443
+    uuid: 95c0270f-14b6-4efb-9572-5266cb4e30a0
+    network: ws
+    tls: true
+    servername: njagro.hsq.kdns.fr
+    client-fingerprint: chrome
+    skip-cert-verify: true
+    ws-opts:
+      path: "/vless-argo?ed=2560"
+      headers:
+        Host: njagro.hsq.kdns.fr
+
+  - name: "US-Railwayip-2"
+    type: vless
+    server: 43.174.195.1
+    port: 443
+    uuid: 95c0270f-14b6-4efb-9572-5266cb4e30a0
+    network: ws
+    tls: true
+    servername: njagro.hsq.kdns.fr
+    client-fingerprint: chrome
+    skip-cert-verify: true
+    ws-opts:
+      path: "/vless-argo?ed=2560"
+      headers:
+        Host: njagro.hsq.kdns.fr
+
+  - name: "US-Railway-2"
+    type: vless
+    server: ip.xjk.indevs.in
+    port: 443
+    uuid: 95c0270f-14b6-4efb-9572-5266cb4e30a0
+    network: ws
+    tls: true
+    servername: njagro.hsq.kdns.fr
+    client-fingerprint: chrome
+    skip-cert-verify: true
+    ws-opts:
+      path: "/vless-argo?ed=2560"
+      headers:
+        Host: njagro.hsq.kdns.fr
+
+
+
+
+proxy-groups:
+  - name: "PROXY"
+    type: select
+    proxies:
+      - "Vls-SG-Alibaba"
+      - "Vls-SG-Alibaba-2"
+      - "US-Railwaysaas-2"
+      - "US-Railwayip-2"
+      - "US-Railway-2"
+      - "DIRECT"
+
+rules:
+  - GEOIP,CN,DIRECT
+  - MATCH,PROXY
